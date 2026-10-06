@@ -1,0 +1,12 @@
+[package]
+name = "practice_wasm"
+version = "0.1.0"
+edition = "2021"
+description = "Thin wasm-bindgen shim: moves strings between practice_core and the page."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+practice_core = { path = "../core" }
+wasm-bindgen = "=0.2.127"
