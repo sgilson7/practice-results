@@ -4,3 +4,5 @@
 //! clocks, so the same inputs always give the same result.
 
 pub mod set;
+
+pub mod rate;

@@ -56,4 +56,20 @@ Broken by: `parse_set` stubbed to return `Err("stub")`.
 
 Restored: 9 passed.
 
+### M3 rates and threshold (crates/core/src/rate.rs), 6 tests
+
+Broken by: `percent_floor` and `below_threshold` stubbed to `None`,
+`parse_threshold` to `Err("stub")`, `DEFAULT_THRESHOLD` set to 0.
+
+| Test | Failed at | Expected | Got |
+|---|---|---|---|
+| percent_floor_hand_values | rate.rs:71 | `Some(66)` for 6/9 | `None` |
+| below_threshold_boundary | rate.rs:90 | `Some(false)` for 7/10 at 70 | `None` |
+| shown_percent_and_suggestion_never_disagree | rate.rs:98 | a percentage | panic on `None` |
+| parse_threshold_accepts_whole_numbers_0_to_100 | rate.rs:113 | `Ok(70)` | `Err("stub")` |
+| parse_threshold_rejects_everything_else | rate.rs:121 | message "whole number from 0 to 100" | "stub" |
+| default_threshold_is_70 | rate.rs:127 | 70 | 0 |
+
+Restored: 15 passed (with M2).
+
 ## 2. Corrective dialogue
