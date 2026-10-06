@@ -132,4 +132,30 @@ before the red run: every topic is still listed when no file is counted.
 
 Restored: 57 passed.
 
+### M7 JSON boundary (crates/core/src/api.rs), 5 tests
+
+Broken by: every `api` function stubbed to return "" (not JSON).
+
+| Test | Failed at | Expected | Got |
+|---|---|---|---|
+| student_round_trip_produces_the_fixture_file | api.rs:135 | `{"ok": ...}` | "" (EOF while parsing) |
+| check_with_missing_answers_is_an_error_message | api.rs:135 | `{"ok": ...}` from start | "" |
+| garbage_input_gives_error_messages_not_panics | api.rs:141 | `{"error": ...}` | "" |
+| teacher_start_gives_default_threshold_text | api.rs:135 | `{"ok": ...}` | "" |
+| teacher_report_through_json | api.rs:135 | `{"ok": ...}` | "" |
+
+Restored: 62 passed.
+
 ## 2. Corrective dialogue
+
+### C1. api.rs garbage-input test expected an error for an empty file list
+
+- File and line: crates/core/src/api.rs:130 (`err` helper), called from
+  `garbage_input_gives_error_messages_not_panics` with
+  `teacher_report(SAMPLE, "[]", "70")`.
+- Expected: `{"error": ...}` for every garbage input.
+- Happened: `{"ok": {... "counted": 0 ...}}`: `[]` is a valid, empty list of
+  opened files (the teacher has not opened any yet), so the core was right.
+- Fix: the test, not the rule. The files-list garbage cases are now a separate
+  list without `[]`, plus two malformed file objects (`[{"name": 1}]`,
+  `[{"name": "a"}]`). No core rule changed; nothing was changed in the page.
