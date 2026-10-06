@@ -38,4 +38,22 @@ Run 2b: comment/string stripping disabled.
 
 Restored: 7 passed.
 
+### M2 practice set (crates/core/src/set.rs), 9 tests
+
+Broken by: `parse_set` stubbed to return `Err("stub")`.
+
+| Test | Failed at | Expected | Got |
+|---|---|---|---|
+| sample_set_has_12_questions_in_4_topics | set.rs:172 | sample set parses | `Err("stub")` |
+| sample_set_is_marked_as_sample | set.rs:172 | sample set parses | `Err("stub")` |
+| rejects_malformed_json | set.rs:209 | message starting "The practice set is not valid" | "stub" |
+| rejects_unknown_field | set.rs:216 | message naming `extra` | "stub" |
+| rejects_answer_not_in_choices | set.rs:224 | message naming q01 | "stub" |
+| rejects_unknown_topic | set.rs:232 | message naming q01 and "fractions" | "stub" |
+| rejects_duplicate_question_id | set.rs:240 | `Question "q01" appears more than once.` | "stub" |
+| rejects_topic_without_questions | set.rs:248 | `Topic "percent" has no questions.` | "stub" |
+| rejects_id_unsafe_for_file_names | set.rs:256 | message naming the bad id | "stub" |
+
+Restored: 9 passed.
+
 ## 2. Corrective dialogue

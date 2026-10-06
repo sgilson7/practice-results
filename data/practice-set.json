@@ -1,0 +1,99 @@
+{
+  "format": "practice-set/1",
+  "id": "ratios-sample-1",
+  "title": "Ratios practice (SAMPLE CONTENT)",
+  "sample": true,
+  "note": "Sample content written to test this tool, not reviewed for classroom use. A teacher should check or replace these questions before students use them.",
+  "topics": [
+    { "id": "simplify", "name": "Simplifying ratios" },
+    { "id": "share", "name": "Sharing in a ratio" },
+    { "id": "equivalent", "name": "Equivalent ratios and missing values" },
+    { "id": "unit-rate", "name": "Unit rates and best buys" }
+  ],
+  "questions": [
+    {
+      "id": "q01",
+      "topic": "simplify",
+      "prompt": "Write 6 : 8 in its simplest form.",
+      "choices": ["6 : 8", "3 : 4", "2 : 3", "4 : 3"],
+      "answer": "3 : 4"
+    },
+    {
+      "id": "q02",
+      "topic": "simplify",
+      "prompt": "Write 15 : 25 in its simplest form.",
+      "choices": ["5 : 3", "1 : 5", "3 : 5", "15 : 25"],
+      "answer": "3 : 5"
+    },
+    {
+      "id": "q03",
+      "topic": "simplify",
+      "prompt": "Write 12 : 18 : 30 in its simplest form.",
+      "choices": ["2 : 3 : 5", "4 : 6 : 10", "6 : 9 : 15", "1 : 2 : 3"],
+      "answer": "2 : 3 : 5"
+    },
+    {
+      "id": "q04",
+      "topic": "share",
+      "prompt": "Ana and Ben share 20 sweets in the ratio 2 : 3. How many sweets does Ben get?",
+      "choices": ["8", "10", "15", "12"],
+      "answer": "12"
+    },
+    {
+      "id": "q05",
+      "topic": "share",
+      "prompt": "Share $45 in the ratio 4 : 5. What is the smaller share?",
+      "choices": ["$25", "$20", "$9", "$36"],
+      "answer": "$20"
+    },
+    {
+      "id": "q06",
+      "topic": "share",
+      "prompt": "Three friends share 60 stickers in the ratio 1 : 2 : 3. How many stickers does the friend with the largest share get?",
+      "choices": ["10", "20", "30", "36"],
+      "answer": "30"
+    },
+    {
+      "id": "q07",
+      "topic": "equivalent",
+      "prompt": "Which ratio is equivalent to 2 : 5?",
+      "choices": ["6 : 15", "4 : 7", "5 : 2", "10 : 20"],
+      "answer": "6 : 15"
+    },
+    {
+      "id": "q08",
+      "topic": "equivalent",
+      "prompt": "Find the missing number: 3 : 4 = 12 : ?",
+      "choices": ["13", "9", "48", "16"],
+      "answer": "16"
+    },
+    {
+      "id": "q09",
+      "topic": "equivalent",
+      "prompt": "A recipe uses flour and sugar in the ratio 5 : 2. One batch uses 350 g of flour. How much sugar does it need?",
+      "choices": ["70 g", "140 g", "175 g", "875 g"],
+      "answer": "140 g"
+    },
+    {
+      "id": "q10",
+      "topic": "unit-rate",
+      "prompt": "5 notebooks cost $8.50. What does one notebook cost?",
+      "choices": ["$1.50", "$3.40", "$1.70", "$0.59"],
+      "answer": "$1.70"
+    },
+    {
+      "id": "q11",
+      "topic": "unit-rate",
+      "prompt": "A car travels 180 km in 3 hours at a steady speed. How far does it travel in 1 hour?",
+      "choices": ["60 km", "540 km", "90 km", "177 km"],
+      "answer": "60 km"
+    },
+    {
+      "id": "q12",
+      "topic": "unit-rate",
+      "prompt": "Which is the better buy? Pack A: 6 eggs for $1.80. Pack B: 10 eggs for $2.80.",
+      "choices": ["Pack A (6 eggs for $1.80)", "They are the same value", "It cannot be worked out", "Pack B (10 eggs for $2.80)"],
+      "answer": "Pack B (10 eggs for $2.80)"
+    }
+  ]
+}
