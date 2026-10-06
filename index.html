@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>Practice results by topic</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header>
+    <h1 id="set-title">Practice results by topic</h1>
+    <p id="sample-banner" class="banner" hidden></p>
+    <nav aria-label="View">
+      <button id="tab-student" type="button" aria-pressed="true">Student</button>
+      <button id="tab-teacher" type="button" aria-pressed="false">Teacher</button>
+    </nav>
+    <p id="load-status" role="status">Loading&hellip;</p>
+  </header>
+
+  <main>
+    <section id="student-view" aria-labelledby="student-heading">
+      <h2 id="student-heading">Practise</h2>
+      <p>Answer every question, then check your answers to see your score per topic.
+        Nothing leaves this device unless you save your result file and hand it in.</p>
+      <p id="progress" class="muted"></p>
+      <ol id="question-list" class="questions"></ol>
+      <p id="student-message" class="message" role="alert"></p>
+      <p class="actions">
+        <button id="check-button" type="button">Check my answers</button>
+        <button id="restart-button" type="button" class="secondary">Start again</button>
+      </p>
+
+      <section id="scores" hidden aria-labelledby="scores-heading">
+        <h2 id="scores-heading">Your score per topic</h2>
+        <table id="score-table">
+          <thead><tr><th scope="col">Topic</th><th scope="col">Correct</th><th scope="col">Score</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p id="overall"></p>
+
+        <h3>Save your result file</h3>
+        <p>Choose a nickname, <strong>not your real name</strong>. The file holds only your nickname,
+          the practice set, and for each question its topic and whether your answer was correct.</p>
+        <p class="actions">
+          <label for="nickname">Nickname</label>
+          <input id="nickname" type="text" autocomplete="off" spellcheck="false">
+          <button id="save-button" type="button">Save result file</button>
+        </p>
+        <p id="save-message" class="message" role="status"></p>
+      </section>
+    </section>
+
+    <section id="teacher-view" hidden aria-labelledby="teacher-heading">
+      <h2 id="teacher-heading">Class results</h2>
+      <p>Open all the result files your students handed in. They are read on this device only;
+        nothing is sent anywhere.</p>
+      <p class="actions">
+        <label for="files">Result files</label>
+        <input id="files" type="file" multiple accept=".json,application/json">
+      </p>
+      <p class="actions">
+        <label for="threshold">Suggest reteaching below (%)</label>
+        <input id="threshold" type="text" inputmode="numeric" size="4">
+      </p>
+      <p id="threshold-message" class="message" role="alert"></p>
+
+      <p id="report-summary" role="status"></p>
+      <table id="topic-table">
+        <thead><tr><th scope="col">Topic</th><th scope="col">Share correct</th><th scope="col">Correct answers</th><th scope="col">Suggestion</th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <h3>Questions most often missed, by topic</h3>
+      <div id="missed"></div>
+
+      <div id="notices-box" hidden>
+        <h3>Notices</h3>
+        <ul id="notices"></ul>
+      </div>
+      <div id="rejected-box" hidden>
+        <h3>Files not counted</h3>
+        <ul id="rejected"></ul>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
