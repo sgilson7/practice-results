@@ -13,3 +13,7 @@ Status: **done**, **open**, or **teacher** (assigned to the teacher).
 | 5 | finding | The core's saved file for the "otter" answers is byte-for-byte the file written by the independent Python generator, so the check value and the layout agree across two implementations. | done |
 | 6 | finding | The check value is FNV-1a over public content: it catches hand edits and damage, not a determined forger, who can recompute it. A static page cannot keep a secret key. | done |
 | 7 | worklist | Treat result files as practice evidence, not marks: a student who wants to can make a file that passes the check. | teacher |
+| 8 | finding | A test can pass against a stub for the wrong reason: `no_files_no_data` held for an empty topic list. Breaking every test before keeping it caught this; the test now also asserts all four topics are listed. | done |
+| 9 | divergence | Plan said the student "sees a score per topic"; I also considered per-question marks and chose not to show them: with marks, "Start again" lets a student reach 100% by elimination and hand in that file. Per-topic scores only, as the brief says. | done |
+| 10 | worklist | Students can start again and save more than one attempt. The teacher view counts each distinct file and flags repeated nicknames; ask students to hand in their first attempt if that is what you want to measure. | teacher |
+| 11 | worklist | Two students may pick the same nickname. The report flags it; only the teacher can tell repeated attempts from two students. | teacher |

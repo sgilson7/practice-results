@@ -110,4 +110,26 @@ Broken by: `read_result` stubbed to `Err("stub")`, `check_value` to `"fnv1a64:0"
 
 Restored: 47 passed.
 
+### M6 teacher report (crates/core/src/report.rs), 10 tests
+
+Broken by: `build_report` stubbed to return an empty report. On the first
+dry read, `no_files_no_data` would have passed against that stub (an empty
+topic list satisfies "no data"), so it gained `assert_eq!(r.topics.len(), 4)`
+before the red run: every topic is still listed when no file is counted.
+
+| Test | Failed at | Expected | Got |
+|---|---|---|---|
+| three_files_hand_computed | report.rs:236 | 6/9 66, 3/9 33, 8/9 88, 7/9 77 | [] |
+| reteach_at_70_default | report.rs:252 | threshold Some(70) | None |
+| reteach_at_other_thresholds | report.rs:261 | at 80: true, true, false, true | [] |
+| most_missed_per_topic | report.rs:280 | q03, q05, q09, q12 first and marked | [] |
+| most_missed_ties_are_all_marked | report.rs:299 | q05 and q06 both marked | index panic (no topics) |
+| rejected_files_are_listed_and_not_counted | report.rs:310 | counted 3, not counted 2 | 0, 0 |
+| no_files_no_data | report.rs:321 | 4 topics listed with no data | 0 topics |
+| duplicate_file_counted_once | report.rs:335 | counted 3 | 0 |
+| same_nickname_different_answers_both_counted_with_notice | report.rs:349 | counted 2 | 0 |
+| invalid_threshold_gives_message_and_no_suggestions | report.rs:362 | threshold message | none |
+
+Restored: 57 passed.
+
 ## 2. Corrective dialogue

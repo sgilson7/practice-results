@@ -9,3 +9,5 @@ pub mod rate;
 
 pub mod result;
 pub mod student;
+
+pub mod report;
