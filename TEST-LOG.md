@@ -98,4 +98,16 @@ unchanged, `correct_flags`/`topic_scores` empty, `view`/`save` = `Err("stub")`).
 
 Restored: 28 passed.
 
+### M5 reading result files (crates/core/src/result.rs), 19 tests
+
+Broken by: `read_result` stubbed to `Err("stub")`, `check_value` to `"fnv1a64:0"`.
+
+| Test | Failed at | Expected | Got |
+|---|---|---|---|
+| fixtures_are_accepted | result.rs:274 | otter.json accepted | `Err("stub")` |
+| saved_file_matches_fixture_byte_for_byte | result.rs:285 | core output == otter.json (check from Python) | check value differs |
+| rejects_* (17 tests: not JSON, empty, cut off, flipped answer, reordered entries, other set, wrong format, unknown / duplicate / missing question, topic mismatch, bad nickname, extra field, wrong type, array, 10 000-deep nesting, oversized) | result.rs:267 (`assert_rejected`) | a message containing the named reason | "stub" |
+
+Restored: 47 passed.
+
 ## 2. Corrective dialogue

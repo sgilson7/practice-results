@@ -147,6 +147,85 @@ pub fn build_result(set: &PracticeSet, correct: &[bool], nickname_raw: &str) -> 
     Ok(SavedFile { file_name: result_file_name(&set.id, &nickname), contents })
 }
 
+/// A result file that passed every check, with its answers in set order.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AcceptedResult {
+    pub nickname: String,
+    pub check: String,
+    pub correct: Vec<bool>,
+}
+
+/// Reads one result file against the open set. Any problem gives a message
+/// (written to follow the file name, e.g. "otter.json: It ..."), never a panic.
+pub fn read_result(set: &PracticeSet, text: &str) -> Result<AcceptedResult, String> {
+    if text.len() > MAX_RESULT_BYTES {
+        return Err(format!(
+            "It is too large to be a result file ({} bytes; the limit is {MAX_RESULT_BYTES}).",
+            text.len()
+        ));
+    }
+    if !text.trim_start().starts_with('{') {
+        return Err("It is not a result file this tool can read: it does not start with '{'.".to_string());
+    }
+    let file: ResultFile = serde_json::from_str(text)
+        .map_err(|e| format!("It is not a result file this tool can read: {e}."))?;
+    if file.format != RESULT_FORMAT {
+        return Err(format!(
+            "It has format \"{}\"; this tool reads \"{RESULT_FORMAT}\".",
+            file.format
+        ));
+    }
+    if file.set_id != set.id {
+        return Err(format!(
+            "It is a result for the set \"{}\", but the open set is \"{}\".",
+            file.set_id, set.id
+        ));
+    }
+    match clean_nickname(&file.nickname) {
+        Ok(clean) if clean == file.nickname => {}
+        Ok(_) => return Err("Its nickname starts or ends with a space.".to_string()),
+        Err(e) => return Err(format!("Its nickname is not allowed. {e}")),
+    }
+    let mut correct: Vec<Option<bool>> = vec![None; set.questions.len()];
+    for e in &file.entries {
+        let i = set.question_index(&e.question).ok_or_else(|| {
+            format!("It has an answer for question \"{}\", which is not in the set.", e.question)
+        })?;
+        if set.questions[i].topic != e.topic {
+            return Err(format!(
+                "It puts question \"{}\" in topic \"{}\", but the set puts it in \"{}\".",
+                e.question, e.topic, set.questions[i].topic
+            ));
+        }
+        if correct[i].is_some() {
+            return Err(format!("It has question \"{}\" more than once.", e.question));
+        }
+        correct[i] = Some(e.correct);
+    }
+    let missing: Vec<&str> = set
+        .questions
+        .iter()
+        .zip(&correct)
+        .filter(|(_, c)| c.is_none())
+        .map(|(q, _)| q.id.as_str())
+        .collect();
+    if !missing.is_empty() {
+        return Err(format!("It has no answer for question {}.", missing.join(", ")));
+    }
+    let expected = check_value(&file.format, &file.set_id, &file.nickname, &file.entries);
+    if file.check != expected {
+        return Err(
+            "Its check value does not match its contents, so it was changed after it was saved (or is damaged)."
+                .to_string(),
+        );
+    }
+    Ok(AcceptedResult {
+        nickname: file.nickname,
+        check: file.check,
+        correct: correct.into_iter().map(|c| c.unwrap_or(false)).collect(),
+    })
+}
+
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
@@ -156,6 +235,156 @@ pub(crate) mod tests {
     /// simplify ✓✓✗, share ✓✗✗, equivalent ✓✓✓, unit-rate ✓✓✗.
     pub(crate) const OTTER: [bool; 12] =
         [true, true, false, true, false, false, true, true, true, true, true, false];
+
+    pub(crate) const OTTER_FILE: &str = include_str!("../../../tests/fixtures/otter.json");
+    pub(crate) const KESTREL_FILE: &str = include_str!("../../../tests/fixtures/kestrel.json");
+    pub(crate) const MAPLE_FILE: &str = include_str!("../../../tests/fixtures/maple.json");
+    pub(crate) const ALTERED_FILE: &str = include_str!("../../../tests/fixtures/altered-otter.json");
+    const NOT_A_RESULT: &str = include_str!("../../../tests/fixtures/not-a-result.json");
+
+    fn otter_doc() -> ResultFile {
+        serde_json::from_str(OTTER_FILE).expect("fixture parses")
+    }
+
+    fn text_of(doc: &ResultFile) -> String {
+        serde_json::to_string_pretty(doc).expect("serialise")
+    }
+
+    /// Re-signs a changed document, so only the targeted rule can reject it.
+    fn resigned(mut doc: ResultFile) -> String {
+        doc.check = check_value(&doc.format, &doc.set_id, &doc.nickname, &doc.entries);
+        text_of(&doc)
+    }
+
+    fn assert_rejected(text: &str, needle: &str) {
+        let set = sample_set();
+        match read_result(&set, text) {
+            Ok(r) => panic!("expected rejection containing {needle:?}, but it was accepted: {r:?}"),
+            Err(msg) => assert!(msg.contains(needle), "expected {needle:?} in {msg:?}"),
+        }
+    }
+
+    #[test]
+    fn fixtures_are_accepted() {
+        let set = sample_set();
+        let otter = read_result(&set, OTTER_FILE).expect("otter accepted");
+        assert_eq!(otter.nickname, "otter");
+        assert_eq!(otter.correct, OTTER.to_vec());
+        assert!(read_result(&set, KESTREL_FILE).is_ok());
+        assert!(read_result(&set, MAPLE_FILE).is_ok());
+    }
+
+    #[test]
+    fn saved_file_matches_fixture_byte_for_byte() {
+        // the fixture's check value was computed by tests/fixtures/make_fixtures.py
+        let saved = build_result(&sample_set(), &OTTER, "otter").unwrap();
+        assert_eq!(saved.contents, OTTER_FILE);
+    }
+
+    #[test]
+    fn rejects_text_that_is_not_json() {
+        assert_rejected(NOT_A_RESULT, "It is not a result file this tool can read");
+    }
+
+    #[test]
+    fn rejects_empty_file() {
+        assert_rejected("", "It is not a result file this tool can read");
+    }
+
+    #[test]
+    fn rejects_cut_off_json() {
+        assert_rejected(&OTTER_FILE[..OTTER_FILE.len() / 2], "EOF while parsing");
+    }
+
+    #[test]
+    fn rejects_flipped_answer() {
+        assert_rejected(ALTERED_FILE, "check value does not match");
+    }
+
+    #[test]
+    fn rejects_reordered_entries() {
+        let mut doc = otter_doc();
+        doc.entries.swap(0, 1);
+        assert_rejected(&text_of(&doc), "check value does not match");
+    }
+
+    #[test]
+    fn rejects_other_set() {
+        let mut doc = otter_doc();
+        doc.set_id = "fractions-1".into();
+        assert_rejected(&resigned(doc), "for the set \"fractions-1\"");
+    }
+
+    #[test]
+    fn rejects_wrong_format() {
+        let mut doc = otter_doc();
+        doc.format = "practice-result/2".into();
+        assert_rejected(&resigned(doc), "has format \"practice-result/2\"");
+    }
+
+    #[test]
+    fn rejects_unknown_question() {
+        let mut doc = otter_doc();
+        doc.entries[11].question = "q13".into();
+        assert_rejected(&resigned(doc), "question \"q13\", which is not in the set");
+    }
+
+    #[test]
+    fn rejects_duplicate_question() {
+        let mut doc = otter_doc();
+        doc.entries[11] = doc.entries[0].clone();
+        assert_rejected(&resigned(doc), "question \"q01\" more than once");
+    }
+
+    #[test]
+    fn rejects_missing_question() {
+        let mut doc = otter_doc();
+        doc.entries.pop();
+        assert_rejected(&resigned(doc), "no answer for question q12");
+    }
+
+    #[test]
+    fn rejects_topic_not_matching_set() {
+        let mut doc = otter_doc();
+        doc.entries[0].topic = "share".into();
+        assert_rejected(&resigned(doc), "puts question \"q01\" in topic \"share\"");
+    }
+
+    #[test]
+    fn rejects_bad_nickname() {
+        let mut doc = otter_doc();
+        doc.nickname = "a/b".into();
+        assert_rejected(&resigned(doc), "nickname is not allowed");
+    }
+
+    #[test]
+    fn rejects_extra_field() {
+        let text = OTTER_FILE.replacen("\"nickname\": \"otter\",", "\"nickname\": \"otter\", \"score\": 100,", 1);
+        assert_rejected(&text, "unknown field `score`");
+    }
+
+    #[test]
+    fn rejects_wrong_type() {
+        let text = OTTER_FILE.replacen("\"correct\": true", "\"correct\": \"yes\"", 1);
+        assert_rejected(&text, "invalid type");
+    }
+
+    #[test]
+    fn rejects_array_instead_of_object() {
+        assert_rejected("[\"practice-result/1\", \"ratios-sample-1\"]", "does not start with '{'");
+    }
+
+    #[test]
+    fn rejects_deep_nesting_without_crashing() {
+        let deep = format!("{{\"entries\": {}{}}}", "[".repeat(10_000), "]".repeat(10_000));
+        assert_rejected(&deep, "It is not a result file this tool can read");
+    }
+
+    #[test]
+    fn rejects_oversized_file() {
+        let big = format!("{{\"pad\": \"{}\"}}", "x".repeat(MAX_RESULT_BYTES));
+        assert_rejected(&big, "too large");
+    }
 
     #[test]
     fn fnv1a64_matches_reference_vectors() {

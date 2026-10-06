@@ -1,0 +1,68 @@
+{
+  "format": "practice-result/1",
+  "set_id": "ratios-sample-1",
+  "nickname": "kestrel",
+  "entries": [
+    {
+      "question": "q01",
+      "topic": "simplify",
+      "correct": true
+    },
+    {
+      "question": "q02",
+      "topic": "simplify",
+      "correct": true
+    },
+    {
+      "question": "q03",
+      "topic": "simplify",
+      "correct": true
+    },
+    {
+      "question": "q04",
+      "topic": "share",
+      "correct": false
+    },
+    {
+      "question": "q05",
+      "topic": "share",
+      "correct": false
+    },
+    {
+      "question": "q06",
+      "topic": "share",
+      "correct": true
+    },
+    {
+      "question": "q07",
+      "topic": "equivalent",
+      "correct": true
+    },
+    {
+      "question": "q08",
+      "topic": "equivalent",
+      "correct": true
+    },
+    {
+      "question": "q09",
+      "topic": "equivalent",
+      "correct": false
+    },
+    {
+      "question": "q10",
+      "topic": "unit-rate",
+      "correct": true
+    },
+    {
+      "question": "q11",
+      "topic": "unit-rate",
+      "correct": true
+    },
+    {
+      "question": "q12",
+      "topic": "unit-rate",
+      "correct": false
+    }
+  ],
+  "check": "fnv1a64:058c1081047a9141"
+}
