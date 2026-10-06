@@ -72,4 +72,30 @@ Broken by: `percent_floor` and `below_threshold` stubbed to `None`,
 
 Restored: 15 passed (with M2).
 
+### M4 student flow and result file (crates/core/src/student.rs, result.rs), 13 tests
+
+The tests were first run green once by mistake, then broken before commit:
+every new function stubbed (`fnv1a64` = 0, `canonical_text` = "",
+`clean_nickname` accepts anything, `result_file_name` = "", `build_result`
+returns an empty file, `start` = no answers, `answer`/`check` return the state
+unchanged, `correct_flags`/`topic_scores` empty, `view`/`save` = `Err("stub")`).
+
+| Test | Failed at | Expected | Got |
+|---|---|---|---|
+| fnv1a64_matches_reference_vectors | result.rs:173 | 0xcbf29ce484222325 (14695981039346656037) | 0 |
+| canonical_text_layout | result.rs:184 | the five-line canonical text | "" |
+| nickname_rules | result.rs:192 | "" rejected | accepted |
+| file_name_uses_set_id_and_nickname | result.rs:208 | practice-result-ratios-sample-1-blue-fox.json | "" |
+| saved_file_holds_only_allowed_fields | result.rs:218 | JSON with five keys | empty text, parse panic |
+| build_rejects_bad_nickname_and_wrong_length | result.rs:237 | Err for " " | Ok |
+| new_attempt_has_no_answers_and_is_unlocked | student.rs:272 | 12 × None | [] |
+| answer_records_choice_and_rejects_out_of_range | student.rs:285 | answers[0] = Some(1) | index panic (answer not recorded) |
+| check_requires_every_answer | student.rs:297 | "Not answered yet: 4, 7, 11." | index panic (no answers kept) |
+| answers_are_locked_after_check | student.rs:309 | checked = true | false |
+| topic_scores_hand_computed | student.rs:322 | 2/3, 1/3, 3/3, 2/3 | view Err("stub") |
+| save_requires_check | student.rs:345 | "Check your answers before saving." | "stub" |
+| tampered_state_is_rejected | student.rs:355 | message "11 answers" | "stub" |
+
+Restored: 28 passed.
+
 ## 2. Corrective dialogue

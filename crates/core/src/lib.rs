@@ -6,3 +6,6 @@
 pub mod set;
 
 pub mod rate;
+
+pub mod result;
+pub mod student;
