@@ -162,6 +162,30 @@ Run B: `scan_page_js` mutated to report nothing.
 
 Restored: 62 + 9 passed.
 
+### M9 browser check (tests/browser_check.py), 1 script with 22 checks
+
+The script passed on its first run against the fresh build. It was then
+broken twice in the built copy only (`dist/web`, never in `web/`), and the
+build was redone afterwards.
+
+Run A: `fetch("https://example.com/beacon")` appended to dist/web/app.js.
+
+| Check | Expected | Got |
+|---|---|---|
+| no console errors | [] | CSP refusal: "Connecting to 'https://example.com/beacon' violates ... connect-src 'self'. The action has been blocked." |
+
+The page's Content-Security-Policy stopped the request before it left the
+browser, so the console check is what caught it.
+
+Run B: same fetch, and the CSP meta tag also removed from dist/web/index.html.
+
+| Check | Expected | Got |
+|---|---|---|
+| no request to another origin | [] | `https://example.com/beacon` (seen by the request listener and aborted by the route guard) |
+| no console errors | [] | "Failed to load resource: net::ERR_FAILED" |
+
+Rebuilt with ./build.sh: BROWSER CHECK PASSED (22 of 22).
+
 ## 2. Corrective dialogue
 
 ### C1. api.rs garbage-input test expected an error for an empty file list
