@@ -448,3 +448,147 @@ fn shim_scanner_catches_decisions() {
     assert!(!scan_shim_code("pub fn f(x: &str) -> Result<String, E> { Ok(g(x)?) }").is_empty());
     assert!(scan_shim_code("// if this were a decision\npub fn f(x: &str) -> String { core::api::f(x) }").is_empty());
 }
+
+/// Names that mean the page is computing or storing something itself, or
+/// talking to the network beyond the same-origin `fetch` of the set.
+const PAGE_FORBIDDEN_IDENTIFIERS: &[(&str, &str)] = &[
+    ("Math", "arithmetic belongs in the core"),
+    ("parseInt", "number parsing belongs in the core"),
+    ("parseFloat", "number parsing belongs in the core"),
+    ("Number", "number parsing belongs in the core"),
+    ("toFixed", "rounding belongs in the core"),
+    ("localStorage", "the page keeps no student data"),
+    ("sessionStorage", "the page keeps no student data"),
+    ("indexedDB", "the page keeps no student data"),
+    ("XMLHttpRequest", "no network requests"),
+    ("WebSocket", "no network requests"),
+    ("EventSource", "no network requests"),
+    ("sendBeacon", "no network requests"),
+    ("eval", "no code from strings"),
+];
+
+/// Replaces JS comments and the contents of string and template literals
+/// with spaces, keeping newlines. (Template `${}` parts count as string text;
+/// the page does not use template literals.)
+fn strip_js(src: &str) -> String {
+    let chars: Vec<char> = src.chars().collect();
+    let mut out = String::with_capacity(src.len());
+    let blank = |c: char| if c == '\n' { '\n' } else { ' ' };
+    let mut i = 0;
+    while i < chars.len() {
+        let c = chars[i];
+        let next = chars.get(i + 1).copied();
+        if c == '/' && next == Some('/') {
+            while i < chars.len() && chars[i] != '\n' {
+                out.push(' ');
+                i += 1;
+            }
+            continue;
+        }
+        if c == '/' && next == Some('*') {
+            out.push_str("  ");
+            i += 2;
+            while i < chars.len() && !(chars[i] == '*' && chars.get(i + 1) == Some(&'/')) {
+                out.push(blank(chars[i]));
+                i += 1;
+            }
+            out.push_str("  ");
+            i += 2;
+            continue;
+        }
+        if c == '"' || c == '\'' || c == '`' {
+            out.push(' ');
+            i += 1;
+            while i < chars.len() && chars[i] != c {
+                if chars[i] == '\\' {
+                    out.push(' ');
+                    i += 1;
+                }
+                if i < chars.len() {
+                    out.push(blank(chars[i]));
+                    i += 1;
+                }
+            }
+            out.push(' ');
+            i += 1;
+            continue;
+        }
+        out.push(c);
+        i += 1;
+    }
+    out
+}
+
+/// Scans page JavaScript for rule-like code: numeric literals other than 0
+/// and 1, and the forbidden names above.
+fn scan_page_js(src: &str) -> Vec<Violation> {
+    let code = strip_js(src);
+    let mut found = Vec::new();
+    for (n, line) in code.lines().enumerate() {
+        let chars: Vec<char> = line.chars().collect();
+        let mut i = 0;
+        while i < chars.len() {
+            let c = chars[i];
+            let prev = if i > 0 { Some(chars[i - 1]) } else { None };
+            let after_ident = prev.map(|p| is_ident_char(p) || p == '$' || p == '.').unwrap_or(false);
+            if c.is_ascii_digit() && !after_ident {
+                let start = i;
+                while i < chars.len() && (is_ident_char(chars[i]) || chars[i] == '.') {
+                    i += 1;
+                }
+                let token: String = chars[start..i].iter().collect();
+                if token != "0" && token != "1" {
+                    found.push(Violation { line: n + 1, token, why: "number in the page".into() });
+                }
+                continue;
+            }
+            if is_ident_char(c) || c == '$' {
+                let start = i;
+                while i < chars.len() && (is_ident_char(chars[i]) || chars[i] == '$') {
+                    i += 1;
+                }
+                let token: String = chars[start..i].iter().collect();
+                if let Some((_, why)) = PAGE_FORBIDDEN_IDENTIFIERS.iter().find(|(w, _)| *w == token) {
+                    found.push(Violation { line: n + 1, token, why: (*why).to_string() });
+                }
+                continue;
+            }
+            i += 1;
+        }
+    }
+    found
+}
+
+#[test]
+fn page_keeps_no_rule_and_no_foreign_url() {
+    let web = repo_root().join("web");
+    let mut entries: Vec<PathBuf> = fs::read_dir(&web)
+        .expect("read web/")
+        .map(|e| e.expect("entry").path())
+        .collect();
+    entries.sort();
+    let mut problems = Vec::new();
+    let mut js_files = 0;
+    for path in &entries {
+        let text = fs::read_to_string(path).expect("read page file");
+        for (n, line) in text.lines().enumerate() {
+            if line.contains("://") {
+                problems.push(format!("{}:{}: absolute URL (another origin?)", path.display(), n + 1));
+            }
+        }
+        if path.extension().map(|x| x == "js").unwrap_or(false) {
+            js_files += 1;
+            problems.extend(report(path, &scan_page_js(&text)));
+        }
+    }
+    assert!(js_files > 0, "no page JavaScript found in {}", web.display());
+    assert!(problems.is_empty(), "page problems:\n{}", problems.join("\n"));
+}
+
+#[test]
+fn page_scanner_catches_rules_and_ignores_text() {
+    assert!(!scan_page_js("if (pct < 70) show();").is_empty());
+    assert!(!scan_page_js("const p = Math.floor(a / b);").is_empty());
+    assert!(!scan_page_js("localStorage.setItem('k', v);").is_empty());
+    assert!(scan_page_js("// 70 in a comment\nconst s = \"70% of 9\"; x[0] = y[1];").is_empty());
+}

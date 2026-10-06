@@ -146,6 +146,22 @@ Broken by: every `api` function stubbed to return "" (not JSON).
 
 Restored: 62 passed.
 
+### M8 page boundary (crates/core/tests/boundary.rs), 2 tests
+
+Run A: appended to web/app.js: `const LIMIT = 70;`, `fetch("https://example.com/x")`, `Math.floor(LIMIT)`.
+
+| Test | Failed at | Expected | Got |
+|---|---|---|---|
+| page_keeps_no_rule_and_no_foreign_url | boundary.rs:585 | no problems | app.js:230 `70` (number in the page); app.js:231 absolute URL; app.js:232 `Math` |
+
+Run B: `scan_page_js` mutated to report nothing.
+
+| Test | Failed at | Expected | Got |
+|---|---|---|---|
+| page_scanner_catches_rules_and_ignores_text | boundary.rs:591 | a violation for `if (pct < 70)` | none |
+
+Restored: 62 + 9 passed.
+
 ## 2. Corrective dialogue
 
 ### C1. api.rs garbage-input test expected an error for an empty file list
