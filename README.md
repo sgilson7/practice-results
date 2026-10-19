@@ -12,7 +12,14 @@ A static browser tool with two views.
 
 Everything is computed in the browser on the device that opens the page.
 Nothing is sent anywhere. The page sets a Content-Security-Policy that blocks
-requests to any other origin.
+requests to any other origin (Builder's privacy-kit policy), and the browser
+check fails on any request at all once the page has loaded and on anything
+left in browser storage.
+
+If a browser blocks WebAssembly (some school devices do, through a policy that
+blocks the JavaScript JIT), the page says so and says the school's IT can allow
+it for sgilson7.github.io. Next to the save and open controls a short line says
+that a school device may block saving or opening files.
 
 The practice set in `data/practice-set.json` is **sample content** (12 ratio
 questions in 4 topics, with answer keys) written to test the tool. Check or
@@ -27,8 +34,10 @@ replace it before classroom use.
 | `web/` | `index.html`, `app.js`, `style.css`. No framework, no bundler, no npm. Draws what the core returns. |
 | `data/practice-set.json` | The practice set (sample content). |
 | `build.sh` | Builds the wasm module and assembles `dist/web/`. |
-| `tests/browser_check.py` | Playwright check in Chromium. |
+| `tests/browser_check.py` | Playwright check in Chromium, Firefox and WebKit. |
+| `tests/plant_leak.py`, `tests/prove-privacy.sh` | Privacy proof: plants 10 leaks, one at a time, in a copy and requires the checks to catch each. |
 | `tests/fixtures/` | Hand-computed result files and their generator, `make_fixtures.py`. |
+| `LICENSE` | MIT. |
 
 ## Requirements
 
@@ -37,8 +46,8 @@ replace it before classroom use.
 - `wasm-bindgen-cli` **0.2.127**, which must match the crate version:
   `cargo install wasm-bindgen-cli --version 0.2.127`
 - Python 3, to serve the folder locally and to run the browser check.
-- Only for the browser check: Playwright for Python with Chromium:
-  `pip install playwright && python -m playwright install chromium`
+- Only for the browser check: Playwright for Python with its browsers:
+  `pip install playwright && python -m playwright install chromium firefox webkit`
 
 ## Build
 
@@ -53,8 +62,9 @@ then `wasm-bindgen --target web` into `dist/web/pkg/`, and copies `web/*` and
 ## Test
 
 ```sh
-cargo test                        # 71 tests: core rules, hand-computed cases, boundary tests
-./build.sh && python tests/browser_check.py   # browser check (Chromium)
+cargo test                        # 73 tests: core rules, hand-computed cases, boundary tests
+./build.sh && python tests/browser_check.py   # browser check (Chromium, Firefox, WebKit)
+PYTHON=python tests/prove-privacy.sh          # privacy proof, a few minutes
 ```
 
 - The core tests include hand-computed cases: per-topic rates for three result
@@ -69,12 +79,24 @@ cargo test                        # 71 tests: core rules, hand-computed cases, b
   map, clock, randomness or input/output in the core. It also fails if the shim
   contains a decision (`if`, `match`, loops, `?`) or if `web/*.js` contains
   rule-like code (numbers other than 0 and 1, `Math`, number parsing, storage)
-  or any absolute URL.
+  or any absolute URL. It also fails unless `web/index.html` carries exactly
+  the privacy kit's Content-Security-Policy and `referrer: no-referrer`.
 - The browser check serves `dist/web` on 127.0.0.1 at a free port, completes
   the set, saves the result file, loads it with two fixtures in the teacher
   view, checks the rates, suggestions and most-missed questions, loads an
   altered file and a non-result file, and fails on any console error, page
-  error, or request to another origin.
+  error, request to another origin, request of any kind after the page
+  reported ready, CSP violation, WebSocket, popup or worker, or anything in
+  cookies, localStorage, sessionStorage or IndexedDB at the end. It then opens
+  the page with WebAssembly removed and with compiling refused, and expects
+  the "blocks WebAssembly" message (hidden on a normal run).
+  `BUILDER_ENGINES` picks engines; `BUILDER_IDLE` sets the idle after ready
+  (default 10 s).
+- `tests/prove-privacy.sh` plants each leak from `tests/plant_leak.py` (P1 a
+  same-origin request carrying the data, P2 localStorage, P3 an off-origin
+  image, P4 sendBeacon, P5 an off-origin fetch; each at the student's save and
+  at the teacher's file read) in a fresh copy and requires the boundary tests
+  or the browser check to catch it.
 
 `TEST-LOG.md` records how each test was first seen failing.
 

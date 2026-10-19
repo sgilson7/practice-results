@@ -592,3 +592,87 @@ fn page_scanner_catches_rules_and_ignores_text() {
     assert!(!scan_page_js("localStorage.setItem('k', v);").is_empty());
     assert!(scan_page_js("// 70 in a comment\nconst s = \"70% of 9\"; x[0] = y[1];").is_empty());
 }
+
+/// The privacy kit's Content-Security-Policy (builder-setting kits/privacy),
+/// directive by directive. The page must carry exactly these directives with
+/// exactly these sources: nothing missing, nothing loosened, nothing added.
+const PRIVACY_CSP: &[(&str, &[&str])] = &[
+    ("default-src", &["'self'"]),
+    ("script-src", &["'self'", "'wasm-unsafe-eval'"]),
+    ("connect-src", &["'self'"]),
+    ("style-src", &["'self'"]),
+    ("img-src", &["'self'", "data:", "blob:"]),
+    ("font-src", &["'none'"]),
+    ("object-src", &["'none'"]),
+    ("frame-src", &["'none'"]),
+    ("worker-src", &["'none'"]),
+    ("manifest-src", &["'none'"]),
+    ("base-uri", &["'none'"]),
+    ("form-action", &["'none'"]),
+];
+
+/// The `content` of the first `<meta>` whose attribute `attr` equals `value`.
+fn meta_content(html: &str, attr: &str, value: &str) -> Option<String> {
+    let needle = format!("{attr}=\"{value}\"");
+    let at = html.find(&needle)?;
+    let start = html[..at].rfind("<meta")?;
+    let end = start + html[start..].find('>')?;
+    let tag = &html[start..end];
+    let c = tag.find("content=\"")? + "content=\"".len();
+    let close = tag[c..].find('"')?;
+    Some(tag[c..c + close].to_string())
+}
+
+/// Problems with a CSP text measured against `PRIVACY_CSP`.
+fn csp_problems(csp: &str) -> Vec<String> {
+    let mut seen: Vec<(String, Vec<String>)> = Vec::new();
+    for part in csp.split(';') {
+        let mut tokens = part.split_whitespace();
+        if let Some(name) = tokens.next() {
+            let mut sources: Vec<String> = tokens.map(str::to_string).collect();
+            sources.sort();
+            seen.push((name.to_ascii_lowercase(), sources));
+        }
+    }
+    let mut problems = Vec::new();
+    for (name, want) in PRIVACY_CSP {
+        let mut want: Vec<String> = want.iter().map(|s| s.to_string()).collect();
+        want.sort();
+        match seen.iter().find(|(n, _)| n == name) {
+            None => problems.push(format!("missing `{name}`")),
+            Some((_, got)) if *got != want => problems.push(format!("`{name}` is {got:?}, expected {want:?}")),
+            _ => {}
+        }
+    }
+    for (name, _) in &seen {
+        if !PRIVACY_CSP.iter().any(|(n, _)| n == name) {
+            problems.push(format!("extra directive `{name}`"));
+        }
+    }
+    problems
+}
+
+#[test]
+fn page_sets_the_privacy_content_security_policy_and_no_referrer() {
+    let path = repo_root().join("web/index.html");
+    let html = fs::read_to_string(&path).expect("read web/index.html");
+    let csp = meta_content(&html, "http-equiv", "Content-Security-Policy")
+        .unwrap_or_else(|| panic!("{}: no Content-Security-Policy meta element", path.display()));
+    let problems = csp_problems(&csp);
+    assert!(problems.is_empty(), "{}: CSP differs from the privacy kit:\n{}", path.display(), problems.join("\n"));
+    assert_eq!(
+        meta_content(&html, "name", "referrer").as_deref(),
+        Some("no-referrer"),
+        "{}: needs <meta name=\"referrer\" content=\"no-referrer\">",
+        path.display()
+    );
+}
+
+#[test]
+fn csp_checker_catches_missing_loosened_and_extra_directives() {
+    let good = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'none'";
+    assert!(csp_problems(good).is_empty(), "{:?}", csp_problems(good));
+    assert!(!csp_problems(&good.replace("font-src 'none'; ", "")).is_empty(), "missing directive not caught");
+    assert!(!csp_problems(&good.replace("connect-src 'self'", "connect-src *")).is_empty(), "loosened directive not caught");
+    assert!(!csp_problems(&format!("{good}; media-src *")).is_empty(), "extra directive not caught");
+}

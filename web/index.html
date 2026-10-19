@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
   <title>Practice results by topic</title>
   <link rel="icon" href="data:,">
@@ -19,6 +19,8 @@
       <button id="tab-teacher" type="button" aria-pressed="false">Teacher</button>
     </nav>
     <p id="load-status" role="status">Loading&hellip;</p>
+    <p id="wasm-blocked" class="blocked" role="alert" hidden>This tool could not start because this browser blocks WebAssembly, which the tool needs.
+      On a school device, your school's IT can allow WebAssembly for sgilson7.github.io.</p>
   </header>
 
   <main>
@@ -51,6 +53,8 @@
           <button id="save-button" type="button">Save result file</button>
         </p>
         <p id="save-message" class="message" role="status"></p>
+        <p class="muted help">On a school device, saving files may be blocked. If no file is saved,
+          your school's IT can allow downloads for sgilson7.github.io.</p>
       </section>
     </section>
 
@@ -62,6 +66,8 @@
         <label for="files">Result files</label>
         <input id="files" type="file" multiple accept=".json,application/json">
       </p>
+      <p class="muted help">On a school device, opening files may be blocked. If the file chooser does not open,
+        your school's IT can allow file selection for sgilson7.github.io.</p>
       <p class="actions">
         <label for="threshold">Suggest reteaching below (%)</label>
         <input id="threshold" type="text" inputmode="numeric" size="4">

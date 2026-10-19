@@ -24,18 +24,24 @@ A static page with a student view and a teacher view, built from a Rust core.
 
 State at handover:
 
-- `cargo test`: 71 tests, all passing (62 in the core library, 9 boundary tests).
+- `cargo test`: 73 tests, all passing (62 in the core library, 11 boundary tests).
 - `./build.sh` produces `dist/web/` (index.html, app.js, style.css,
   pkg/practice_wasm.js, pkg/practice_wasm_bg.wasm, data/practice-set.json).
-- `tests/browser_check.py` passes in Chromium (22 of 22 checks), with no
-  console errors, no page errors and no request to another origin.
+- `tests/browser_check.py` passes in Chromium, Firefox and WebKit
+  (39 checks per engine), with no console errors, no page
+  errors, no request to another origin, no request after ready, no CSP
+  violation and nothing in browser storage; with WebAssembly removed or
+  refused, the "blocks WebAssembly" message is shown.
+- `tests/prove-privacy.sh`: PRIVACY PROOF PASSED, 10 of 10 planted leaks caught.
 - Every test was seen failing once before it was kept (`TEST-LOG.md`).
 
 ## What is open
 
-- **Only Chromium was checked.** Other browsers, especially older iPads and
-  Safari, were not tried. The page needs WebAssembly and a browser that
-  understands `'wasm-unsafe-eval'` in its Content-Security-Policy.
+- **Engines, not devices.** Chromium, Firefox and WebKit (Playwright builds)
+  were checked; real iPads, Safari and managed Chromebooks were not. The page
+  needs WebAssembly and a browser that understands `'wasm-unsafe-eval'` in its
+  Content-Security-Policy. Where a school policy blocks WebAssembly the page
+  says so (emulated in the check, not seen under a real policy).
 - **The check value is not a seal.** It catches hand edits and damaged files,
   not a student who recomputes it. A static page cannot keep a secret.
 - **The answer key is public.** Anyone who opens `data/practice-set.json` can

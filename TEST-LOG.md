@@ -186,6 +186,29 @@ Run B: same fetch, and the CSP meta tag also removed from dist/web/index.html.
 
 Rebuilt with ./build.sh: BROWSER CHECK PASSED (22 of 22).
 
+### K1 privacy kit and blocked-WebAssembly message (K-12 deployability)
+
+New Rust tests in crates/core/tests/boundary.rs, each broken once:
+
+| Test | Broken by | Failed at | Got |
+|---|---|---|---|
+| page_sets_the_privacy_content_security_policy_and_no_referrer | `font-src 'none'` removed from web/index.html | boundary.rs:662 | missing `font-src` |
+| same | referrer meta changed to `origin` | boundary.rs:663 | needs `<meta name="referrer" content="no-referrer">` |
+| csp_checker_catches_missing_loosened_and_extra_directives | checker stopped reporting extra directives | boundary.rs:677 | extra directive not caught |
+
+Restored: 62 + 11 passed.
+
+New browser checks, each broken once in dist/web only (Chromium), then restored:
+
+| Check | Broken by | Got |
+|---|---|---|
+| WebAssembly absent / refused: the message is shown, controls hidden (4 checks) | the probe in dist/web/app.js made to return true | FAIL x4 (message not shown: TimeoutError); without the probe the page fell through to the generic "could not start" line |
+| the blocked-WebAssembly message is hidden when WebAssembly works | `hidden` removed from `#wasm-blocked` | FAIL |
+| the save / open controls say a school device may block files (2 checks) | the help lines reworded without "your school's IT can allow" | FAIL x2 |
+| no request after ready, no CSP violation, nothing stored | tests/prove-privacy.sh: 10 planted leaks (P1-P5 at the student save and at the teacher's file read) | all 10 caught by the browser check; P2 and P4 also by the boundary scan |
+
+Restored: BROWSER CHECK PASSED in chromium, firefox, webkit.
+
 ## 2. Corrective dialogue
 
 ### C1. api.rs garbage-input test expected an error for an empty file list
