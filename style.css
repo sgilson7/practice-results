@@ -64,3 +64,5 @@ th, td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid var
 .reteach { color: var(--bad); font-weight: 700; }
 .badge { font-size: 0.8rem; font-weight: 700; color: var(--bad); margin-left: 0.4rem; }
 #missed ol { margin-top: 0.25rem; }
+.blocked { background: var(--warn-bg); color: var(--warn-fg); padding: 0.5rem 0.75rem; border-radius: 0.4rem; font-weight: 600; }
+.help { font-size: 0.9rem; }
